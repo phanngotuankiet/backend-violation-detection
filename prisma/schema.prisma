@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              Int               @id @default(autoincrement())
+  email           String            @unique
+  password        String
+  name            String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  videosProcessed VideosProcessed[]
+}
+
+model VideosProcessed {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  actionResult String
+  modelId      Int
+  model        Model    @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  confidence   Float?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Model {
+  id              Int               @id @default(autoincrement())
+  name            String
+  version         String
+  accuracy        Float?
+  trainedAt       DateTime          @default(now())
+  videosProcessed VideosProcessed[]
+  predictions     Prediction[]
+}
+
+model VideoFeature {
+  id          Int      @id @default(autoincrement())
+  videoId     Int
+  video       Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  featureName String
+  value       Float
+  createdAt   DateTime @default(now())
+}
+
+model Video {
+  id            Int            @id @default(autoincrement())
+  features      VideoFeature[]
+  predictions   Prediction[]
+}
+
+model Prediction {
+  id          Int      @id @default(autoincrement())
+  videoId     Int
+  video       Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  modelId     Int
+  model       Model    @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  action      String
+  confidence  Float
+  timestamp   DateTime @default(now())
+}
