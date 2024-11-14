@@ -8,9 +8,20 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              Int               @id @default(autoincrement())
+  email           String            @unique
+  password        String
+  name            String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  videosProcessed VideosProcessed[]
+}
+
+model VideosProcessed {
+  id           Int      @id @default(autoincrement())
+  userId       Int // Foreign key field
+  user         User     @relation(fields: [userId], references: [id]) // Relation
+  actionResult String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
