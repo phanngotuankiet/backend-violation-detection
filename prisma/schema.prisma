@@ -12,8 +12,9 @@ model User {
   email           String            @unique
   password        String
   name            String?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  role            String            @default("user") 
+  createdAt       DateTime          @default(now()) 
+  updatedAt       DateTime          @updatedAt 
   videosProcessed VideosProcessed[]
 }
 
@@ -25,8 +26,8 @@ model VideosProcessed {
   modelId      Int
   model        Model    @relation(fields: [modelId], references: [id], onDelete: Cascade)
   confidence   Float?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime @default(now()) 
+  updatedAt    DateTime @updatedAt 
 }
 
 model Model {
@@ -35,6 +36,8 @@ model Model {
   version         String
   accuracy        Float?
   trainedAt       DateTime          @default(now())
+  createdAt       DateTime          @default(now()) 
+  updatedAt       DateTime          @updatedAt 
   videosProcessed VideosProcessed[]
   predictions     Prediction[]
 }
@@ -45,13 +48,16 @@ model VideoFeature {
   video       Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
   featureName String
   value       Float
-  createdAt   DateTime @default(now())
+  createdAt   DateTime @default(now()) 
+  updatedAt   DateTime @updatedAt 
 }
 
 model Video {
   id            Int            @id @default(autoincrement())
   features      VideoFeature[]
   predictions   Prediction[]
+  createdAt     DateTime       @default(now()) 
+  updatedAt     DateTime       @updatedAt 
 }
 
 model Prediction {
@@ -62,5 +68,7 @@ model Prediction {
   model       Model    @relation(fields: [modelId], references: [id], onDelete: Cascade)
   action      String
   confidence  Float
-  timestamp   DateTime @default(now())
+  timestamp   DateTime @default(now()) 
+  createdAt   DateTime @default(now()) 
+  updatedAt   DateTime @updatedAt 
 }
