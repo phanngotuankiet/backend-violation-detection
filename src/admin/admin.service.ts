@@ -19,9 +19,12 @@ export class AdminService {
           createdAt: true,
           updatedAt: true,
         },
+<<<<<<< HEAD
         orderBy: {
           createdAt: 'desc',
         },
+=======
+>>>>>>> 2e9a2ff (first commit)
       });
 
       if (!users || users.length === 0) {
