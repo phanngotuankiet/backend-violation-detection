@@ -90,10 +90,14 @@ model Question {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 <<<<<<< HEAD
+<<<<<<< HEAD
   answers     Answer[] 
 =======
   answers     Answer[]
 >>>>>>> 4c9612f (BE admin)
+=======
+  answers     Answer[] 
+>>>>>>> dde7706 (update forum)
 }
 
 model Answer {

@@ -104,22 +104,50 @@ export class QuestionService {
   }
 
   async deleteQuestion(id: number, userId: number) {
-    const question = await this.prisma.question.findUnique({
-      where: { id },
-    });
+    try {
+      // Log the deletion attempt
+      console.log(`Attempting to delete question ${id} by user ${userId}`);
 
-    if (!question) {
-      throw new NotFoundException(`Question with ID ${id} not found`);
+      const question = await this.prisma.question.findUnique({
+        where: { id },
+        include: {
+          answers: {
+            include: {
+              comments: true,
+            },
+          },
+        },
+      });
+
+      if (!question) {
+        throw new NotFoundException(`Question with ID ${id} not found`);
+      }
+
+      if (question.userId !== userId) {
+        throw new ForbiddenException('You can only delete your own questions');
+      }
+
+      // Delete comments first
+      for (const answer of question.answers) {
+        await this.prisma.comment.deleteMany({
+          where: { answerId: answer.id },
+        });
+      }
+
+      // Delete answers
+      await this.prisma.answer.deleteMany({
+        where: { questionId: id },
+      });
+
+      // Finally delete the question
+      await this.prisma.question.delete({
+        where: { id },
+      });
+
+      return { message: 'Question and related content deleted successfully' };
+    } catch (error) {
+      console.error('Error during question deletion:', error);
+      throw new Error(`Failed to delete question: ${error.message}`);
     }
-
-    if (question.userId !== userId) {
-      throw new ForbiddenException('You can only delete your own questions');
-    }
-
-    await this.prisma.question.delete({
-      where: { id },
-    });
-
-    return { message: 'Question deleted successfully' };
   }
 }
