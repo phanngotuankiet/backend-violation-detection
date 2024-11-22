@@ -19,6 +19,9 @@ export class AdminService {
           createdAt: true,
           updatedAt: true,
         },
+        orderBy: {
+          createdAt: 'desc',
+        },
       });
 
       if (!users || users.length === 0) {
