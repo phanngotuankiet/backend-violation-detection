@@ -21,7 +21,6 @@
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
-<<<<<<< HEAD
     "@nestjs/config": "^3.3.0",
     "@nestjs/core": "^10.0.0",
     "@nestjs/jwt": "^10.2.0",
@@ -32,11 +31,6 @@
     "bcryptjs": "^2.4.3",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
-=======
-    "@nestjs/core": "^10.0.0",
-    "@nestjs/platform-express": "^10.0.0",
-    "@prisma/client": "^5.22.0",
->>>>>>> 177a9da (first commit)
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1"
   },
@@ -44,18 +38,12 @@
     "@nestjs/cli": "^10.0.0",
     "@nestjs/schematics": "^10.0.0",
     "@nestjs/testing": "^10.0.0",
-<<<<<<< HEAD
     "@types/bcrypt": "^5.0.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.2",
     "@types/node": "^20.3.1",
     "@types/passport-jwt": "^4.0.1",
-=======
-    "@types/express": "^5.0.0",
-    "@types/jest": "^29.5.2",
-    "@types/node": "^20.3.1",
->>>>>>> 177a9da (first commit)
     "@types/supertest": "^6.0.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
@@ -89,10 +77,6 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
-<<<<<<< HEAD
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
-=======
-  }
->>>>>>> 177a9da (first commit)
 }
