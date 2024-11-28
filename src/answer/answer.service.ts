@@ -61,10 +61,17 @@ export class AnswerService {
     });
   }
 
+  // src/answer/answer.service.ts
   async deleteAnswer(id: number, userId: number) {
     const answer = await this.prisma.answer.findUnique({
       where: { id },
+      include: {
+        comments: true, // Include comments for logging
+      },
     });
+
+    console.log('database', answer.userId);
+    console.log('request', userId);
 
     if (!answer) {
       throw new NotFoundException(`Answer #${id} not found`);
@@ -74,9 +81,12 @@ export class AnswerService {
       throw new ForbiddenException('You can only delete your own answers');
     }
 
-    return this.prisma.answer.delete({
+    // Delete answer and cascade delete comments
+    await this.prisma.answer.delete({
       where: { id },
     });
+
+    return { message: 'Answer and related comments deleted successfully' };
   }
 
   async acceptAnswer(id: number, userId: number) {

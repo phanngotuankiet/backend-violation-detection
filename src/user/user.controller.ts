@@ -18,13 +18,13 @@ export class UserController {
   async updateName(@Request() req, @Body() body: { name: string }) {
     console.log('Thay đổi name', req.user);
 
-    return await this.userService.updateName(req.user.userId, body.name);
+    return await this.userService.updateName(req.user.id, body.name);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
   async findMe(@Request() req) {
     console.log(req.user);
-    return await this.userService.findUserById(req.user.userId);
+    return await this.userService.findUserById(req.user.id);
   }
 }
