@@ -39,7 +39,6 @@ export class AnswerService {
     const answer = await this.prisma.answer.findUnique({
       where: { id },
     });
-
     if (!answer) {
       throw new NotFoundException(`Answer #${id} not found`);
     }
