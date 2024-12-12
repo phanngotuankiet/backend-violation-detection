@@ -8,6 +8,13 @@ import { AdminModule } from './admin/admin.module';
 import { QuestionModule } from './question/question.module';
 import { AnswerModule } from './answer/answer.module';
 import { CommentModule } from './comment/comment.module';
+import { WebsocketModule } from './websocket/websocket.module';
+import { SearchController } from './search/search.controller';
+import { SearchService } from './search/search.service';
+import { SearchModule } from './search/search.module';
+// import { WebSocketGateway } from '@nestjs/websockets';
+import { WebsocketGateway } from './websocket/websocket.gateway';
+
 @Module({
   imports: [
     PrismaModule,
@@ -17,8 +24,11 @@ import { CommentModule } from './comment/comment.module';
     QuestionModule,
     AnswerModule,
     CommentModule,
+    WebsocketModule,
+    SearchModule,
+    // AdminForumModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [AppController, SearchController],
+  providers: [AppService, SearchService, WebsocketGateway],
 })
 export class AppModule {}

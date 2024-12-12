@@ -20,6 +20,8 @@ model User {
   questions       Question[]
   answers         Answer[]
   comments        Comment[]
+  sensitiveSearches SensitiveSearch[]
+  videos     Video[]
 }
 
 model VideosProcessed {
@@ -57,11 +59,15 @@ model VideoFeature {
 }
 
 model Video {
-  id            Int            @id @default(autoincrement())
-  features      VideoFeature[]
-  predictions   Prediction[]
-  createdAt     DateTime       @default(now()) 
-  updatedAt     DateTime       @updatedAt 
+  id          Int            @id @default(autoincrement())
+  title       String
+  description String?
+  features    VideoFeature[]
+  predictions Prediction[]
+  createdAt   DateTime       @default(now()) 
+  updatedAt   DateTime       @updatedAt 
+  userId      Int
+  user        User          @relation(fields: [userId], references: [id])
 }
 
 model Prediction {
@@ -111,4 +117,16 @@ model Comment {
   isEdited  Boolean   @default(false)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+}
+
+model SensitiveSearch {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id])
+  searchTerm String
+  category   String
+  status     String   @default("pending") 
+  timestamp  DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }

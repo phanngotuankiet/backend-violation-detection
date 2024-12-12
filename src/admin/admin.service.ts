@@ -19,12 +19,9 @@ export class AdminService {
           createdAt: true,
           updatedAt: true,
         },
-<<<<<<< HEAD
         orderBy: {
           createdAt: 'desc',
         },
-=======
->>>>>>> 2e9a2ff (first commit)
       });
 
       if (!users || users.length === 0) {
@@ -94,5 +91,77 @@ export class AdminService {
       console.error('Error updating user:', error);
       throw new Error('Could not update user');
     }
+  }
+  async getAllQuestions() {
+    return this.prisma.question.findMany({
+      include: {
+        user: true,
+        answers: {
+          include: {
+            user: true,
+            comments: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async deleteQuestion(id: number) {
+    const question = await this.prisma.question.findUnique({ where: { id } });
+    if (!question) throw new NotFoundException('Question not found');
+
+    return this.prisma.question.delete({ where: { id } });
+  }
+  async getAllAnswers() {
+    return this.prisma.answer.findMany({
+      include: {
+        user: true,
+        question: true,
+        comments: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async deleteAnswer(id: number) {
+    const answer = await this.prisma.answer.findUnique({ where: { id } });
+    if (!answer) throw new NotFoundException('Answer not found');
+
+    return this.prisma.answer.delete({ where: { id } });
+  }
+
+  async toggleAnswerAcceptance(id: number) {
+    const answer = await this.prisma.answer.findUnique({ where: { id } });
+    if (!answer) throw new NotFoundException('Answer not found');
+
+    return this.prisma.answer.update({
+      where: { id },
+      data: { isAccepted: !answer.isAccepted },
+    });
+  }
+
+  async getAllComments() {
+    return this.prisma.comment.findMany({
+      include: {
+        user: true,
+        answer: {
+          include: {
+            question: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async deleteComment(id: number) {
+    const comment = await this.prisma.comment.findUnique({ where: { id } });
+    if (!comment) throw new NotFoundException('Comment not found');
+    return this.prisma.comment.delete({ where: { id } });
   }
 }

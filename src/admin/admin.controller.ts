@@ -5,6 +5,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Post,
   Put,
 } from '@nestjs/common';
@@ -34,5 +35,37 @@ export class AdminController {
     @Body() userData: User,
   ): Promise<User> {
     return this.adminService.updateUser(userId, userData);
+  }
+  @Get('questions')
+  async getAllQuestions() {
+    return this.adminService.getAllQuestions();
+  }
+
+  @Delete('questions/:id')
+  async deleteQuestion(@Param('id', ParseIntPipe) id: number) {
+    return this.adminService.deleteQuestion(id);
+  }
+  @Get('answers')
+  async getAllAnswers() {
+    return this.adminService.getAllAnswers();
+  }
+
+  @Delete('answers/:id')
+  async deleteAnswer(@Param('id', ParseIntPipe) id: number) {
+    return this.adminService.deleteAnswer(id);
+  }
+
+  @Put('answers/:id/toggle-acceptance')
+  async toggleAnswerAcceptance(@Param('id', ParseIntPipe) id: number) {
+    return this.adminService.toggleAnswerAcceptance(id);
+  }
+
+  @Get('comments')
+  async getAllComments() {
+    return this.adminService.getAllComments();
+  }
+  @Delete('comments/:id')
+  async deleteComment(@Param('id', ParseIntPipe) id: number) {
+    return this.adminService.deleteComment(id);
   }
 }
