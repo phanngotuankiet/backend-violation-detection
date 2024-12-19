@@ -8,32 +8,37 @@ datasource db {
 }
 
 model User {
-
-  id              Int               @id @default(autoincrement())
-  email           String            @unique
-  password        String
-  name            String?
-  role            String            @default("user") 
-  createdAt       DateTime          @default(now()) 
-  updatedAt       DateTime          @updatedAt 
-  videosProcessed VideosProcessed[]
-  questions       Question[]
-  answers         Answer[]
-  comments        Comment[]
+  id                Int               @id @default(autoincrement())
+  email             String            @unique
+  password          String
+  name              String?
+  role              String            @default("user")
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  videosProcessed   VideosProcessed[]
+  questions         Question[]
+  answers           Answer[]
+  comments          Comment[]
   sensitiveSearches SensitiveSearch[]
-  videos     Video[]
+  videos            Video[]
 }
 
 model VideosProcessed {
-  id           Int      @id @default(autoincrement())
-  userId       Int
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  actionResult String
-  modelId      Int
-  model        Model    @relation(fields: [modelId], references: [id], onDelete: Cascade)
-  confidence   Float?
-  createdAt    DateTime @default(now()) 
-  updatedAt    DateTime @updatedAt 
+  id          Int          @id @default(autoincrement())
+  videoId     Int
+  video       Video        @relation(fields: [videoId], references: [id])
+  userId      Int
+  user        User         @relation(fields: [userId], references: [id])
+  filePath    String
+  fileSize    Int
+  mimeType    String
+  videoData   Bytes
+  detect      String[]
+  modelId     Int
+  model       Model        @relation(fields: [modelId], references: [id])
+  predictions Prediction[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
 
 model Model {
@@ -42,81 +47,72 @@ model Model {
   version         String
   accuracy        Float?
   trainedAt       DateTime          @default(now())
-  createdAt       DateTime          @default(now()) 
-  updatedAt       DateTime          @updatedAt 
-  videosProcessed VideosProcessed[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
   predictions     Prediction[]
-}
-
-model VideoFeature {
-  id          Int      @id @default(autoincrement())
-  videoId     Int
-  video       Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
-  featureName String
-  value       Float
-  createdAt   DateTime @default(now()) 
-  updatedAt   DateTime @updatedAt 
+  videosProcessed VideosProcessed[]
 }
 
 model Video {
-  id          Int            @id @default(autoincrement())
-  title       String
-  description String?
-  features    VideoFeature[]
-  predictions Prediction[]
-  createdAt   DateTime       @default(now()) 
-  updatedAt   DateTime       @updatedAt 
-  userId      Int
-  user        User          @relation(fields: [userId], references: [id])
+  id              Int               @id @default(autoincrement())
+  title           String
+  fileSize        Int // Add this field
+  mimeType        String // Add this field
+  videoData       Bytes // Add this to store video content
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  userId          Int
+  user            User              @relation(fields: [userId], references: [id])
+  videosProcessed VideosProcessed[]
 }
 
 model Prediction {
-  id          Int      @id @default(autoincrement())
-  videoId     Int
-  video       Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  id          Int             @id @default(autoincrement())
+  processedId Int
+  processed   VideosProcessed @relation(fields: [processedId], references: [id], onDelete: Cascade)
   modelId     Int
-  model       Model    @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  model       Model           @relation(fields: [modelId], references: [id], onDelete: Cascade)
   action      String
   confidence  Float
-  timestamp   DateTime @default(now()) 
-  createdAt   DateTime @default(now()) 
-  updatedAt   DateTime @updatedAt 
+  timestamp   DateTime        @default(now())
+  createdAt   DateTime        @default(now())
 }
+
 model Question {
-  id          Int       @id @default(autoincrement())
-  title       String
-  content     String
-  userId      Int
-  user        User      @relation(fields: [userId], references: [id])
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  answers     Answer[]
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  answers   Answer[]
 }
 
 model Answer {
-  id          Int       @id @default(autoincrement())
-  content     String
-  userId      Int
-  user        User      @relation(fields: [userId], references: [id])
-  questionId  Int
-  question    Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  isAccepted  Boolean   @default(false)
-  isEdited    Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  comments    Comment[] @relation("AnswerComments")
+  id         Int       @id @default(autoincrement())
+  content    String
+  userId     Int
+  user       User      @relation(fields: [userId], references: [id])
+  questionId Int
+  question   Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  isAccepted Boolean   @default(false)
+  isEdited   Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  comments   Comment[] @relation("AnswerComments")
 }
 
 model Comment {
-  id        Int       @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   content   String
   userId    Int
-  user      User      @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
   answerId  Int
-  answer    Answer    @relation(fields: [answerId], references: [id], onDelete: Cascade, name: "AnswerComments")
-  isEdited  Boolean   @default(false)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  answer    Answer   @relation(fields: [answerId], references: [id], onDelete: Cascade, name: "AnswerComments")
+  isEdited  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model SensitiveSearch {
@@ -125,7 +121,7 @@ model SensitiveSearch {
   user       User     @relation(fields: [userId], references: [id])
   searchTerm String
   category   String
-  status     String   @default("pending") 
+  status     String   @default("pending")
   timestamp  DateTime @default(now())
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt

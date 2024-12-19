@@ -14,6 +14,8 @@ import { SearchService } from './search/search.service';
 import { SearchModule } from './search/search.module';
 // import { WebSocketGateway } from '@nestjs/websockets';
 import { WebsocketGateway } from './websocket/websocket.gateway';
+import { VideoController } from './video/video.controller';
+import { VideoModule } from './video/video.module';
 
 @Module({
   imports: [
@@ -26,9 +28,10 @@ import { WebsocketGateway } from './websocket/websocket.gateway';
     CommentModule,
     WebsocketModule,
     SearchModule,
+    VideoModule,
     // AdminForumModule,
   ],
-  controllers: [AppController, SearchController],
+  controllers: [AppController, SearchController, VideoController],
   providers: [AppService, SearchService, WebsocketGateway],
 })
 export class AppModule {}

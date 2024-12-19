@@ -250,10 +250,7 @@ export class SearchService {
 
     const videos = await this.prisma.video.findMany({
       where: {
-        OR: [
-          { title: { contains: searchTerm, mode: 'insensitive' } },
-          { description: { contains: searchTerm, mode: 'insensitive' } },
-        ],
+        OR: [{ title: { contains: searchTerm, mode: 'insensitive' } }],
       },
       include: {
         user: {
@@ -262,7 +259,6 @@ export class SearchService {
             name: true,
           },
         },
-        predictions: true,
       },
       orderBy: {
         createdAt: 'desc',
