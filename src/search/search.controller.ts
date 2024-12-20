@@ -9,12 +9,15 @@ import {
   Request,
   ParseIntPipe,
   BadRequestException,
+  Query,
 } from '@nestjs/common';
 import { SearchService } from './search.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { SearchStatus } from 'src/websocket/websocket.types';
 import { WebsocketGateway } from 'src/websocket/websocket.gateway';
+import { PaginatedResult, PaginationParams } from 'src/constants/pagination';
+import { SensitiveSearch } from '@prisma/client';
 
 @Controller('search')
 export class SearchController {
@@ -44,8 +47,13 @@ export class SearchController {
   @Get('sensitive')
   @UseGuards(JwtAuthGuard)
   @Roles('admin')
-  async getSensitiveSearches() {
-    return this.searchService.getSensitiveSearches();
+  // async getSensitiveSearches() {
+  //   return this.searchService.getSensitiveSearches();
+  // }
+  async getSensitiveSearches(
+    @Query() paginationParams: PaginationParams,
+  ): Promise<PaginatedResult<SensitiveSearch>> {
+    return this.searchService.getSensitiveSearches(paginationParams);
   }
 
   @Put('sensitive/:id/status')

@@ -8,3 +8,9 @@ export interface SensitiveSearchNotification {
 }
 
 export type SearchStatus = 'pending' | 'reviewed' | 'flagged';
+
+export interface QAEvent {
+  type: 'question' | 'answer' | 'comment';
+  action: 'create' | 'update' | 'delete';
+  data: any;
+}

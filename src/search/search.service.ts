@@ -229,6 +229,7 @@ import {
   SearchStatus,
   SensitiveSearchNotification,
 } from '../websocket/websocket.types';
+import { PaginationParams } from 'src/constants/pagination';
 
 @Injectable()
 export class SearchService {
@@ -311,21 +312,57 @@ export class SearchService {
     return { isSensitive: false };
   }
 
-  async getSensitiveSearches() {
-    return this.prisma.sensitiveSearch.findMany({
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
+  // async getSensitiveSearches() {
+  //   return this.prisma.sensitiveSearch.findMany({
+  //     include: {
+  //       user: {
+  //         select: {
+  //           id: true,
+  //           email: true,
+  //           name: true,
+  //         },
+  //       },
+  //     },
+  //     orderBy: {
+  //       createdAt: 'desc',
+  //     },
+  //   });
+  // }
+  async getSensitiveSearches(params: PaginationParams) {
+    const page = Number(params.page) || 1;
+    const limit = Number(params.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const [searches, total] = await Promise.all([
+      this.prisma.sensitiveSearch.findMany({
+        skip,
+        take: limit,
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+            },
           },
         },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      this.prisma.sensitiveSearch.count(),
+    ]);
+
+    const lastPage = Math.ceil(total / limit);
+
+    return {
+      data: searches,
+      meta: {
+        total,
+        page,
+        lastPage,
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    };
   }
 
   async updateSearchStatus(id: number, status: SearchStatus) {

@@ -6,7 +6,7 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { SensitiveSearchNotification } from './websocket.types';
+import { QAEvent, SensitiveSearchNotification } from './websocket.types';
 
 @WebSocketGateway({
   cors: {
@@ -21,6 +21,7 @@ export class WebsocketGateway
   server: Server;
 
   private adminSockets: Map<string, Socket> = new Map();
+  private userSockets: Map<number, Socket[]> = new Map();
 
   handleConnection(client: Socket) {
     const isAdmin = client.handshake.query.isAdmin === 'true';
@@ -28,11 +29,27 @@ export class WebsocketGateway
       this.adminSockets.set(client.id, client);
     }
     console.log('Client connected:', client.id);
+
+    const userId = Number(client.handshake.query.userId);
+    if (userId) {
+      const userSockets = this.userSockets.get(userId) || [];
+      userSockets.push(client);
+      this.userSockets.set(userId, userSockets);
+    }
   }
 
   handleDisconnect(client: Socket) {
     this.adminSockets.delete(client.id);
     console.log('Client disconnected:', client.id);
+
+    const userId = Number(client.handshake.query.userId);
+    if (userId) {
+      const userSockets = this.userSockets.get(userId) || [];
+      const updatedSockets = userSockets.filter(
+        (socket) => socket.id !== client.id,
+      );
+      this.userSockets.set(userId, updatedSockets);
+    }
   }
 
   @SubscribeMessage('newSensitiveSearch')
@@ -46,5 +63,9 @@ export class WebsocketGateway
     this.adminSockets.forEach((socket) => {
       socket.emit('sensitiveSearchAlert', data);
     });
+  }
+
+  emitQAEvent(event: QAEvent) {
+    this.server.emit('qaEvent', event);
   }
 }

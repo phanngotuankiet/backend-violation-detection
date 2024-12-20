@@ -2,36 +2,71 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
-import { User } from '@prisma/client';
+import { Question, User } from '@prisma/client';
+import { PaginatedResult, PaginationParams } from 'src/constants/pagination';
 
 @Injectable()
 export class AdminService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getAllUsers() {
-    try {
-      const users = await this.prisma.user.findMany({
-        select: {
-          id: true,
-          email: true,
-          role: true,
-          name: true,
-          createdAt: true,
-          updatedAt: true,
-        },
+  // async getAllUsers() {
+  //   try {
+  //     const users = await this.prisma.user.findMany({
+  //       select: {
+  //         id: true,
+  //         email: true,
+  //         role: true,
+  //         name: true,
+  //         createdAt: true,
+  //         updatedAt: true,
+  //       },
+  //       orderBy: {
+  //         createdAt: 'desc',
+  //       },
+  //     });
+
+  //     if (!users || users.length === 0) {
+  //       throw new NotFoundException('No users found');
+  //     }
+
+  //     return users;
+  //   } catch (error) {
+  //     throw new NotFoundException('Failed to fetch users');
+  //   }
+  // }
+  async getAllUsers(params: PaginationParams) {
+    const page = Number(params.page) || 1;
+    const limit = Number(params.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        skip,
+        take: limit,
         orderBy: {
           createdAt: 'desc',
         },
-      });
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      }),
+      this.prisma.user.count(),
+    ]);
 
-      if (!users || users.length === 0) {
-        throw new NotFoundException('No users found');
-      }
-
-      return users;
-    } catch (error) {
-      throw new NotFoundException('Failed to fetch users');
-    }
+    return {
+      data: users,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async addUser(user: User) {
@@ -92,23 +127,82 @@ export class AdminService {
       throw new Error('Could not update user');
     }
   }
-  async getAllQuestions() {
-    return this.prisma.question.findMany({
-      include: {
-        user: true,
-        answers: {
-          include: {
-            user: true,
-            comments: {
-              include: {
-                user: true,
+  // async getAllQuestions() {
+  //   return this.prisma.question.findMany({
+  //     include: {
+  //       user: true,
+  //       answers: {
+  //         include: {
+  //           user: true,
+  //           comments: {
+  //             include: {
+  //               user: true,
+  //             },
+  //           },
+  //         },
+  //       },
+  //     },
+  //     orderBy: { createdAt: 'desc' },
+  //   });
+  // }
+  async getAllQuestions(
+    params: PaginationParams,
+  ): Promise<PaginatedResult<Question>> {
+    const page = Number(params.page) || 1;
+    const limit = Number(params.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const [questions, total] = await Promise.all([
+      this.prisma.question.findMany({
+        skip,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+            },
+          },
+          answers: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+              comments: {
+                include: {
+                  user: {
+                    select: {
+                      id: true,
+                      name: true,
+                    },
+                  },
+                },
               },
             },
           },
         },
+      }),
+      this.prisma.question.count(),
+    ]);
+
+    const lastPage = Math.ceil(total / limit);
+
+    return {
+      data: questions,
+      meta: {
+        total,
+        page,
+        lastPage,
       },
-      orderBy: { createdAt: 'desc' },
-    });
+    };
   }
 
   async deleteQuestion(id: number) {

@@ -4,10 +4,14 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { WebsocketGateway } from '../websocket/websocket.gateway';
 
 @Injectable()
 export class QuestionService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly websocketGateway: WebsocketGateway,
+  ) {}
 
   async getAllQuestions() {
     return this.prisma.question.findMany({
@@ -42,17 +46,35 @@ export class QuestionService {
     return question;
   }
 
+  // async createQuestion(data: {
+  //   title: string;
+  //   content: string;
+  //   userId: number;
+  // }) {
+  //   return this.prisma.question.create({
+  //     data,
+  //     include: {
+  //       user: true,
+  //     },
+  //   });
+  // }
   async createQuestion(data: {
     title: string;
     content: string;
     userId: number;
   }) {
-    return this.prisma.question.create({
+    const question = await this.prisma.question.create({
       data,
-      include: {
-        user: true,
-      },
+      include: { user: true },
     });
+
+    this.websocketGateway.emitQAEvent({
+      type: 'question',
+      action: 'create',
+      data: question,
+    });
+
+    return question;
   }
 
   async updateQuestion(

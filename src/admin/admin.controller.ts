@@ -8,17 +8,22 @@ import {
   ParseIntPipe,
   Post,
   Put,
+  Query,
 } from '@nestjs/common';
 import { AdminService } from './admin.service';
-import { User } from '@prisma/client';
+import { Question, User } from '@prisma/client';
+import { PaginatedResult, PaginationParams } from 'src/constants/pagination';
 
 @Controller('admin')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
   @Get('users')
-  async getAllUsers() {
-    return this.adminService.getAllUsers();
+  // async getAllUsers() {
+  //   return this.adminService.getAllUsers();
+  // }
+  async getAllUsers(@Query() query: PaginationParams) {
+    return this.adminService.getAllUsers(query);
   }
   @Post('add-user')
   async addUser(@Body() userData: User): Promise<User> {
@@ -37,8 +42,13 @@ export class AdminController {
     return this.adminService.updateUser(userId, userData);
   }
   @Get('questions')
-  async getAllQuestions() {
-    return this.adminService.getAllQuestions();
+  // async getAllQuestions() {
+  //   return this.adminService.getAllQuestions();
+  // }
+  async getAllQuestions(
+    @Query() query: PaginationParams,
+  ): Promise<PaginatedResult<Question>> {
+    return this.adminService.getAllQuestions(query);
   }
 
   @Delete('questions/:id')
