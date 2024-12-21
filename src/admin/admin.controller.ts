@@ -10,11 +10,13 @@ import {
   Put,
   Query,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { Question, User } from '@prisma/client';
 import { PaginatedResult, PaginationParams } from 'src/constants/pagination';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { Roles } from 'src/auth/roles.decorator';
 
 @Controller('admin')
 export class AdminController {
@@ -94,5 +96,18 @@ export class AdminController {
   @UseGuards(JwtAuthGuard)
   async getTopContributors() {
     return this.adminService.getTopContributors();
+  }
+
+  @Get('users/search')
+  @UseGuards(JwtAuthGuard)
+  @Roles('admin')
+  async searchUsers(
+    @Query('q') query: string,
+    @Query() params: PaginationParams,
+  ) {
+    if (!query) {
+      throw new BadRequestException('Search query is required');
+    }
+    return this.adminService.searchUsers(query, params);
   }
 }
