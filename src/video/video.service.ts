@@ -73,6 +73,8 @@ export class VideoService {
 
     return processed;
   }
+
+  // lấy tất cả video đã upload và đọc bởi ML của user
   async getUserVideos(userId: number) {
     return this.prisma.video.findMany({
       where: { userId },

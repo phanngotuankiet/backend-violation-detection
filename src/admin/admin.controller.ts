@@ -1,5 +1,6 @@
 /* eslint-disable prettier/prettier */
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -10,7 +11,6 @@ import {
   Put,
   Query,
   UseGuards,
-  BadRequestException,
 } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { Question, User } from '@prisma/client';
