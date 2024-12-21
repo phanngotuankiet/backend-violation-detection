@@ -239,6 +239,7 @@ export class SearchService {
     private readonly websocketGateway: WebsocketGateway,
   ) {}
 
+  // tìm kiếm video
   async searchVideos(searchTerm: string, userId: number) {
     const sensitiveCheck = await this.checkSensitiveContent(searchTerm, userId);
 
@@ -249,6 +250,20 @@ export class SearchService {
         videos: [],
       };
     }
+
+    const resultVideos = await this.prisma.video.findMany({
+      where: { userId, OR: [{ title: { contains: searchTerm } }] },
+      include: {
+        videosProcessed: {
+          include: {
+            predictions: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
 
     const videos = await this.prisma.video.findMany({
       where: {
@@ -269,7 +284,8 @@ export class SearchService {
 
     return {
       isSensitive: false,
-      videos,
+      // videos,
+      videos: resultVideos,
     };
   }
 

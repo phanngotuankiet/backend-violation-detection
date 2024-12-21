@@ -35,6 +35,7 @@ export class SearchController {
     );
     return result;
   }
+
   @Post('check')
   @UseGuards(JwtAuthGuard)
   async checkSearch(@Body() data: { searchTerm: string }, @Request() req) {
