@@ -9,10 +9,12 @@ import {
   Post,
   Put,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { Question, User } from '@prisma/client';
 import { PaginatedResult, PaginationParams } from 'src/constants/pagination';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @Controller('admin')
 export class AdminController {
@@ -77,5 +79,20 @@ export class AdminController {
   @Delete('comments/:id')
   async deleteComment(@Param('id', ParseIntPipe) id: number) {
     return this.adminService.deleteComment(id);
+  }
+  @Get('stats/users')
+  @UseGuards(JwtAuthGuard)
+  async getUserStats() {
+    return this.adminService.getUserStats();
+  }
+  @Get('stats/forum')
+  @UseGuards(JwtAuthGuard)
+  async getForumStats() {
+    return this.adminService.getForumStats();
+  }
+  @Get('stats/contributors')
+  @UseGuards(JwtAuthGuard)
+  async getTopContributors() {
+    return this.adminService.getTopContributors();
   }
 }

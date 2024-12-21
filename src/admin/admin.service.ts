@@ -1,9 +1,21 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
 import { Question, User } from '@prisma/client';
 import { PaginatedResult, PaginationParams } from 'src/constants/pagination';
+import {
+  ForumStats,
+  MonthlyForumStats,
+  MonthlyStats,
+  TopContributor,
+  TopContributorsResponse,
+  UserStats,
+} from 'src/constants/Stats';
 
 @Injectable()
 export class AdminService {
@@ -257,5 +269,203 @@ export class AdminService {
     const comment = await this.prisma.comment.findUnique({ where: { id } });
     if (!comment) throw new NotFoundException('Comment not found');
     return this.prisma.comment.delete({ where: { id } });
+  }
+  async getUserStats(): Promise<UserStats> {
+    try {
+      const [totalUsers, roleStats] = await Promise.all([
+        this.prisma.user.count(),
+        this.prisma.user.groupBy({
+          by: ['role'],
+          _count: {
+            _all: true,
+          },
+        }),
+      ]);
+
+      const monthlyStats = await this.prisma.$queryRaw<MonthlyStats[]>`
+        SELECT 
+          EXTRACT(MONTH FROM "createdAt")::integer as month,
+          EXTRACT(YEAR FROM "createdAt")::integer as year,
+          COUNT(*)::integer as "_count"
+        FROM "User"
+        GROUP BY 
+          EXTRACT(MONTH FROM "createdAt"),
+          EXTRACT(YEAR FROM "createdAt")
+        ORDER BY year DESC, month DESC
+        LIMIT 12
+      `;
+
+      return {
+        total: totalUsers,
+        roleDistribution: roleStats.map((stat) => ({
+          role: stat.role,
+          _count: stat._count._all,
+        })),
+        monthlyGrowth: monthlyStats,
+      };
+    } catch (error) {
+      console.error('Error getting user stats:', error);
+      throw new InternalServerErrorException('Failed to get user statistics');
+    }
+  }
+
+  async getForumStats(): Promise<ForumStats> {
+    try {
+      const [totalStats, rawMonthlyStats] = await Promise.all([
+        Promise.all([
+          this.prisma.question.count(),
+          this.prisma.answer.count(),
+          this.prisma.comment.count(),
+        ]),
+        this.prisma.$queryRaw<MonthlyForumStats[]>`
+          SELECT 
+            EXTRACT(MONTH FROM date_series)::integer as month,
+            EXTRACT(YEAR FROM date_series)::integer as year,
+            COALESCE(COUNT(DISTINCT q.id), 0)::integer as questions,
+            COALESCE(COUNT(DISTINCT a.id), 0)::integer as answers,
+            COALESCE(COUNT(DISTINCT c.id), 0)::integer as comments
+          FROM generate_series(
+            NOW() - INTERVAL '12 months',
+            NOW(),
+            INTERVAL '1 month'
+          ) as date_series
+          LEFT JOIN "Question" q ON 
+            EXTRACT(MONTH FROM q."createdAt") = EXTRACT(MONTH FROM date_series) AND
+            EXTRACT(YEAR FROM q."createdAt") = EXTRACT(YEAR FROM date_series)
+          LEFT JOIN "Answer" a ON 
+            EXTRACT(MONTH FROM a."createdAt") = EXTRACT(MONTH FROM date_series) AND
+            EXTRACT(YEAR FROM a."createdAt") = EXTRACT(YEAR FROM date_series)
+          LEFT JOIN "Comment" c ON 
+            EXTRACT(MONTH FROM c."createdAt") = EXTRACT(MONTH FROM date_series) AND
+            EXTRACT(YEAR FROM c."createdAt") = EXTRACT(YEAR FROM date_series)
+          GROUP BY month, year
+          ORDER BY year DESC, month DESC
+        `,
+      ]);
+
+      const [questions, answers, comments] = totalStats;
+      const monthlyStats = rawMonthlyStats || [];
+
+      return {
+        total: {
+          questions,
+          answers,
+          comments,
+        },
+        monthly: monthlyStats,
+      };
+    } catch (error) {
+      console.error('Error getting forum stats:', error);
+      throw new InternalServerErrorException('Failed to get forum statistics');
+    }
+  }
+  async getTopContributors(): Promise<TopContributorsResponse> {
+    const [topQuestioners, topAnswerers, topCommenters, rawTopOverall] =
+      await Promise.all([
+        this.prisma.user.findMany({
+          take: 5,
+          orderBy: {
+            questions: { _count: 'desc' },
+          },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            _count: {
+              select: { questions: true },
+            },
+          },
+        }),
+        this.prisma.user.findMany({
+          take: 5,
+          orderBy: {
+            answers: { _count: 'desc' },
+          },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            _count: {
+              select: { answers: true },
+            },
+          },
+        }),
+        this.prisma.user.findMany({
+          take: 5,
+          orderBy: {
+            comments: { _count: 'desc' },
+          },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            _count: {
+              select: { comments: true },
+            },
+          },
+        }),
+        this.prisma.$queryRaw`
+        SELECT 
+          u.id,
+          u.name,
+          u.email,
+          CAST(COUNT(q.id) AS INTEGER) as questions,
+          CAST(COUNT(a.id) AS INTEGER) as answers,
+          CAST(COUNT(c.id) AS INTEGER) as comments,
+          CAST((COUNT(q.id) + COUNT(a.id) + COUNT(c.id)) AS INTEGER) as total
+        FROM "User" u
+        LEFT JOIN "Question" q ON q."userId" = u.id
+        LEFT JOIN "Answer" a ON a."userId" = u.id
+        LEFT JOIN "Comment" c ON c."userId" = u.id
+        GROUP BY u.id, u.name, u.email
+        ORDER BY (COUNT(q.id) + COUNT(a.id) + COUNT(c.id)) DESC
+        LIMIT 5
+      `,
+      ]);
+    // const topOverall = (rawTopOverall as any[]).map((user) => ({
+    //   id: user.id,
+    //   name: user.name,
+    //   email: user.email,
+    //   questions: Number(user.questions),
+    //   answers: Number(user.answers),
+    //   comments: Number(user.comments),
+    //   total: Number(user.total),
+    // }));
+    const topOverall = await this.prisma.$queryRaw<TopContributor[]>`
+    SELECT 
+      u.id,
+      u.name,
+      u.email,
+      (SELECT COUNT(*) FROM "Question" WHERE "userId" = u.id)::integer as questions,
+      (SELECT COUNT(*) FROM "Answer" WHERE "userId" = u.id)::integer as answers,
+      (SELECT COUNT(*) FROM "Comment" WHERE "userId" = u.id)::integer as comments,
+      (
+        (SELECT COUNT(*) FROM "Question" WHERE "userId" = u.id) *5+
+        (SELECT COUNT(*) FROM "Answer" WHERE "userId" = u.id) *2+
+        (SELECT COUNT(*) FROM "Comment" WHERE "userId" = u.id)
+      )::integer as total
+    FROM "User" u
+    GROUP BY u.id, u.name, u.email
+    HAVING (
+      (SELECT COUNT(*) FROM "Question" WHERE "userId" = u.id) +
+      (SELECT COUNT(*) FROM "Answer" WHERE "userId" = u.id) +
+      (SELECT COUNT(*) FROM "Comment" WHERE "userId" = u.id)
+    ) > 0
+    ORDER BY total DESC
+    LIMIT 5
+  `;
+    return {
+      topQuestioners,
+      topAnswerers,
+      topCommenters,
+      // topOverall: topOverall.map((user) => ({
+      //   ...user,
+      //   questions: Number(user.questions),
+      //   answers: Number(user.answers),
+      //   comments: Number(user.comments),
+      //   total: Number(user.total),
+      // })),
+      topOverall,
+    };
   }
 }

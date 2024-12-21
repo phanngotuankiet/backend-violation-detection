@@ -7,13 +7,18 @@ import {
   Request,
   Get,
   Param,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Header,
   Res,
+  UnauthorizedException,
+  BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { VideoService } from './video.service';
 import { ProcessVideoDto } from 'src/types/video';
 import { Response as ExpressResponse } from 'express';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 // import axios from 'axios';
 
 @Controller('video')
@@ -21,17 +26,33 @@ export class VideoController {
   constructor(private readonly videoService: VideoService) {}
 
   @Post('upload')
+  @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file')) // Change from 'video' to 'file' to match FE
   async uploadVideo(
     @UploadedFile() file: Express.Multer.File,
     @Body() createVideoDto: any,
-    @Request() req,
+    @Request() req: any,
   ) {
+    console.log('Request body:', createVideoDto);
+    console.log('Request user:', req.user);
+    console.log('Request headers:', req.headers);
+
+    if (!req.user) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+
     try {
+      // Use userId from request body if req.user.id is undefined
+      const userId = req.user.id || createVideoDto.userId;
+
+      if (!userId) {
+        throw new BadRequestException('User ID is required');
+      }
+
       const video = await this.videoService.createVideo({
         file,
         title: createVideoDto.title,
-        userId: req.user?.id || 1, // Temporary default userId for testing
+        userId: Number(userId),
       });
 
       return {

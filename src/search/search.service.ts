@@ -230,6 +230,7 @@ import {
   SensitiveSearchNotification,
 } from '../websocket/websocket.types';
 import { PaginationParams } from 'src/constants/pagination';
+import { SensitiveStats } from 'src/constants/Stats';
 
 @Injectable()
 export class SearchService {
@@ -432,6 +433,55 @@ export class SearchService {
     return {
       totalSearches,
       categoryCounts: stats,
+    };
+  }
+  async getSensitiveStats(): Promise<SensitiveStats> {
+    const [statusCount, topSearchers, topFlagged] = await Promise.all([
+      this.prisma.sensitiveSearch.groupBy({
+        by: ['status'],
+        _count: true,
+      }),
+      this.prisma.$queryRaw<any[]>`
+        SELECT 
+          u.id,
+          u.name,
+          u.email,
+          COUNT(s.id)::integer as "totalSearches"
+        FROM "User" u
+        JOIN "SensitiveSearch" s ON s."userId" = u.id
+        GROUP BY u.id, u.name, u.email
+        ORDER BY "totalSearches" DESC
+        LIMIT 5
+      `,
+      this.prisma.$queryRaw<any[]>`
+        SELECT 
+          u.id,
+          u.name,
+          u.email,
+          COUNT(s.id)::integer as "flaggedCount"
+        FROM "User" u
+        JOIN "SensitiveSearch" s ON s."userId" = u.id
+        WHERE s.status = 'flagged'
+        GROUP BY u.id, u.name, u.email
+        ORDER BY "flaggedCount" DESC
+        LIMIT 5
+      `,
+    ]);
+
+    const distribution = {
+      pending: 0,
+      reviewed: 0,
+      flagged: 0,
+    };
+
+    statusCount.forEach((item) => {
+      distribution[item.status] = item._count;
+    });
+
+    return {
+      statusDistribution: distribution,
+      topSearchers,
+      topFlagged,
     };
   }
 }

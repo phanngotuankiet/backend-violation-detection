@@ -81,4 +81,9 @@ export class SearchController {
   async getStats() {
     return this.searchService.getSearchStats();
   }
+  @Get('stats/sensitive')
+  @UseGuards(JwtAuthGuard)
+  async getSensitiveStats() {
+    return this.searchService.getSensitiveStats();
+  }
 }
