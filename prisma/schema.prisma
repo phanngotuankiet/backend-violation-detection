@@ -21,6 +21,7 @@ model User {
   comments          Comment[]
   sensitiveSearches SensitiveSearch[]
   videos            Video[]
+  refreshTokens     RefreshToken[]
 }
 
 model VideosProcessed {
@@ -125,4 +126,12 @@ model SensitiveSearch {
   timestamp  DateTime @default(now())
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  userId    Int
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id])
 }
